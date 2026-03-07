@@ -16,7 +16,9 @@ export default function ChatBar({ onSend, disabled }) {
   const [focused, setFocused] = useState(false)
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
   const [placeholderVisible, setPlaceholderVisible] = useState(true)
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
   const textareaRef = useRef(null)
+  const initialViewportHeight = useRef(window.innerHeight)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -27,6 +29,24 @@ export default function ChatBar({ onSend, disabled }) {
       }, 300)
     }, 3500)
     return () => clearInterval(interval)
+  }, [])
+
+  // Detect keyboard open/close on mobile
+  useEffect(() => {
+    const handleResize = () => {
+      const currentHeight = window.innerHeight
+      const heightDiff = initialViewportHeight.current - currentHeight
+      // If viewport shrunk by more than 150px, keyboard is likely open
+      setIsKeyboardOpen(heightDiff > 150)
+    }
+
+    window.addEventListener('resize', handleResize)
+    window.visualViewport?.addEventListener('resize', handleResize)
+    
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.visualViewport?.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   const autoResize = useCallback(() => {
@@ -68,8 +88,10 @@ export default function ChatBar({ onSend, disabled }) {
         left: 0,
         right: 0,
         zIndex: 900,
-        padding: '10px 10px',
-        paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
+        padding: '8px',
+        paddingBottom: isKeyboardOpen ? '8px' : 'max(10px, env(safe-area-inset-bottom))',
+        background: isKeyboardOpen ? 'rgba(8,8,8,0.98)' : 'transparent',
+        transition: 'background 0.2s ease',
       }}
     >
       <div
@@ -114,7 +136,13 @@ export default function ChatBar({ onSend, disabled }) {
               ref={textareaRef}
               value={value}
               onChange={e => setValue(e.target.value)}
-              onFocus={() => setFocused(true)}
+              onFocus={() => {
+                setFocused(true)
+                // Scroll into view on mobile when focused
+                setTimeout(() => {
+                  textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }, 300)
+              }}
               onBlur={() => setFocused(false)}
               onKeyDown={handleKeyDown}
               disabled={disabled}
@@ -125,14 +153,16 @@ export default function ChatBar({ onSend, disabled }) {
                 border: 'none',
                 outline: 'none',
                 color: 'rgba(255,255,255,0.95)',
-                fontSize: 14,
+                fontSize: 16, // Prevent zoom on iOS
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 400,
                 caretColor: 'rgba(0,255,65,0.8)',
                 resize: 'none',
                 overflow: 'auto',
                 lineHeight: 1.5,
-                maxHeight: MAX_TEXTAREA_HEIGHT,
+                maxHeight: isKeyboardOpen ? 120 : MAX_TEXTAREA_HEIGHT,
+                WebkitUserSelect: 'text',
+                userSelect: 'text',
               }}
               placeholder=""
             />
@@ -143,7 +173,7 @@ export default function ChatBar({ onSend, disabled }) {
                   left: 0,
                   top: 2,
                   color: 'rgba(255,255,255,0.3)',
-                  fontSize: 14,
+                  fontSize: 16, // Match textarea to prevent layout shift
                   fontFamily: 'Inter, sans-serif',
                   pointerEvents: 'none',
                   opacity: placeholderVisible ? 1 : 0,

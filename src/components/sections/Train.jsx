@@ -16,6 +16,7 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [waitingForAnswer, setWaitingForAnswer] = useState(false)
   const [dumpCount, setDumpCount] = useState(0)
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight)
   const scrollRef = useRef(null)
   const processedRef = useRef(null)
   const initializedRef = useRef(false)
@@ -25,6 +26,23 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages])
+
+  // Handle viewport height changes (keyboard open/close)
+  useEffect(() => {
+    const updateHeight = () => {
+      const height = window.visualViewport?.height || window.innerHeight
+      setViewportHeight(height)
+    }
+
+    updateHeight()
+    window.addEventListener('resize', updateHeight)
+    window.visualViewport?.addEventListener('resize', updateHeight)
+
+    return () => {
+      window.removeEventListener('resize', updateHeight)
+      window.visualViewport?.removeEventListener('resize', updateHeight)
+    }
+  }, [])
 
   useEffect(() => {
     if (!initializedRef.current) {
@@ -209,13 +227,14 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
 
   return (
     <div style={{
-      height: '100vh',
+      height: `${viewportHeight}px`,
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
       maxWidth: 760,
       margin: '0 auto',
       padding: '0 12px',
+      overflow: 'hidden',
     }}>
       {phase === 'questions' && (
         <div style={{
@@ -261,13 +280,17 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
         style={{
           flex: 1,
           overflowY: 'auto',
+          overflowX: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           gap: 10,
           paddingTop: phase !== 'questions' ? 70 : 8,
-          paddingBottom: 90,
+          paddingBottom: 100,
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(255,255,255,0.1) transparent',
+          WebkitOverflowScrolling: 'touch',
+          WebkitUserSelect: 'text',
+          userSelect: 'text',
         }}
       >
         <AnimatePresence initial={false}>

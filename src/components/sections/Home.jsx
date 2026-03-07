@@ -29,6 +29,7 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
   const [messages, setMessages] = useState(() => loadStoredHistory())
   const [loading, setLoading] = useState(false)
   const [learnedFact, setLearnedFact] = useState(null)
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight)
   const scrollRef = useRef(null)
   const processedRef = useRef(null)
   const learnedFactTimer = useRef(null)
@@ -44,6 +45,24 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
   useEffect(() => {
     scrollToBottom()
   }, [messages, loading])
+
+  // Handle viewport height changes (keyboard open/close)
+  useEffect(() => {
+    const updateHeight = () => {
+      // Use visualViewport if available (better for mobile)
+      const height = window.visualViewport?.height || window.innerHeight
+      setViewportHeight(height)
+    }
+
+    updateHeight()
+    window.addEventListener('resize', updateHeight)
+    window.visualViewport?.addEventListener('resize', updateHeight)
+
+    return () => {
+      window.removeEventListener('resize', updateHeight)
+      window.visualViewport?.removeEventListener('resize', updateHeight)
+    }
+  }, [])
 
   useEffect(() => {
     if (externalMessage && externalMessage !== processedRef.current) {
@@ -111,13 +130,14 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
 
   return (
     <div style={{
-      height: '100vh',
+      height: `${viewportHeight}px`,
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
       maxWidth: 760,
       margin: '0 auto',
       padding: '0 12px',
+      overflow: 'hidden',
     }}>
       <AnimatePresence>
         {!hasMessages && (
@@ -170,15 +190,19 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
         style={{
           flex: 1,
           overflowY: 'auto',
+          overflowX: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           gap: 10,
           paddingTop: hasMessages ? 60 : 0,
-          paddingBottom: 90,
+          paddingBottom: 100,
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(255,255,255,0.1) transparent',
           position: 'relative',
           zIndex: 1,
+          WebkitOverflowScrolling: 'touch',
+          WebkitUserSelect: 'text',
+          userSelect: 'text',
         }}
       >
         <AnimatePresence initial={false}>
