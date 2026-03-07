@@ -1,81 +1,141 @@
-# GAMO BRAIN
+# 🧠 GAMO BRAIN
 
-Your digital twin. An AI that learns to think, speak, and behave exactly like you.
+Your personal AI twin - trained on your life, thoughts, and experiences.
 
-## Features
+---
 
-- **Neural Network Background** — Animated canvas with 80+ nodes and connections. Nodes are attracted to your cursor with a sticky effect.
-- **Conversational Training** — Train GAMO through natural conversation, not forms. GAMO asks questions and learns from your answers.
-- **Meet GAMO** — Chat with your digital twin powered by Claude Sonnet 4. GAMO responds as you would, using everything you've taught it.
-- **Profile Visualization** — Beautiful circular progress indicator and narrative summary showing what GAMO knows about you.
-- **Persistent Storage** — All training data saved locally in your browser. Your data never leaves your machine except for Claude API calls.
+## 🚀 Quick Start
 
-## Tech Stack
+**Live Site:** [Your deployed URL]
 
-- React 19 + Vite
-- Framer Motion for animations
-- HTML5 Canvas for neural network background
-- Claude API (claude-sonnet-4-20250514)
-- localStorage for data persistence
+**Default Password:** `admin` (⚠️ Change this immediately!)
 
-## Getting Started
+### **First Time Setup:**
+1. Visit your site
+2. Enter password: `admin`
+3. Go to "Teach Me" and paste your bio/documents
+4. Chat with your twin in "Meet GAMO"
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+---
 
-2. **Start dev server:**
-   ```bash
-   npm run dev
-   ```
+## 📚 Documentation
 
-3. **Add your Claude API key:**
-   - Go to Profile section
-   - Click "Add API Key"
-   - Enter your Anthropic API key (starts with `sk-ant-`)
+All documentation is in the `docs/` folder:
 
-4. **Train GAMO:**
-   - Go to Train section
-   - Answer GAMO's questions naturally
-   - The more you share, the better GAMO becomes
+- **[QUICK_START.md](docs/QUICK_START.md)** - Get started in 5 minutes
+- **[SECURITY.md](docs/SECURITY.md)** - Password setup & authentication
+- **[DATA_BACKUP.md](docs/DATA_BACKUP.md)** - Backup & export your data
 
-5. **Meet your twin:**
-   - Go to Meet GAMO section
-   - Have a conversation with your digital twin
+---
 
-## Project Structure
+## 🔒 Security
 
-```
-src/
-├── App.jsx                      — Main app, routing, state management
-├── main.jsx                     — Entry point
-├── index.css                    — Global styles
-├── components/
-│   ├── NeuralBackground.jsx     — Animated neural network canvas
-│   ├── FloatingMenu.jsx         — Draggable navigation menu
-│   ├── ChatBar.jsx              — Persistent bottom chat input
-│   └── sections/
-│       ├── Home.jsx             — Landing page
-│       ├── Train.jsx            — Conversational training interface
-│       ├── Chat.jsx             — Meet GAMO conversation
-│       └── Profile.jsx          — Profile visualization
-└── utils/
-    ├── storage.js               — localStorage helpers, training questions
-    └── claudeAPI.js             — Claude API integration
-```
+Your site is **password-protected**. Nobody can access your data without the password.
 
-## Build for Production
+**Change the default password:**
+1. See [docs/SECURITY.md](docs/SECURITY.md)
+2. Generate new password hash
+3. Update `src/components/AuthGate.jsx`
+4. Deploy
 
+---
+
+## 💾 Data Backup
+
+**Backup everything locally:**
 ```bash
-npm run build
+node backup-data.js
 ```
 
-The build output will be in the `dist/` directory.
+**Export for migration:**
+```bash
+node export-for-migration.js
+```
 
-## Notes
+See [docs/DATA_BACKUP.md](docs/DATA_BACKUP.md) for details.
 
-- API key is stored in localStorage and only sent to Anthropic's API
-- All training data is stored locally in your browser
-- No backend required — fully client-side
-- Works offline (except for Claude API calls)
+---
+
+## 🎯 Features
+
+✅ **Password Protected** - Secure authentication  
+✅ **Document Storage** - Unlimited text storage  
+✅ **Semantic Search** - AI finds relevant memories  
+✅ **Context-Aware Chat** - Twin knows your full context  
+✅ **Mobile Optimized** - Perfect on all devices  
+✅ **Data Ownership** - Export & backup everything  
+✅ **Scalable** - Handles millions of words  
+
+---
+
+## 💰 Cost
+
+**~$6-23/month**
+- Claude API: $5-20 (usage-based)
+- DynamoDB: $1-3 (storage)
+- OpenAI Embeddings: ~$0.10 per document
+- Pinecone: $0 (free tier)
+
+---
+
+## 🛠️ Tech Stack
+
+**Frontend:** React + Vite + Framer Motion  
+**Backend:** AWS Lambda + API Gateway  
+**Database:** DynamoDB  
+**Vector DB:** Pinecone  
+**AI:** Claude (Anthropic) + OpenAI Embeddings  
+
+---
+
+## 📱 Mobile Support
+
+✅ Perfect mobile experience  
+✅ No zoom on input focus  
+✅ Smooth keyboard handling  
+✅ Works on all screen sizes  
+✅ PWA-ready  
+
+---
+
+## 🔧 Development
+
+**Install:**
+```bash
+npm install
+```
+
+**Run locally:**
+```bash
+npm run dev
+```
+
+**Deploy:**
+```bash
+git push
+```
+(Auto-deploys via GitHub)
+
+---
+
+## 📖 How It Works
+
+1. **Training:** You paste documents → AI extracts facts + generates embeddings
+2. **Storage:** Documents in DynamoDB, vectors in Pinecone
+3. **Chat:** Your message → semantic search → relevant context → Claude response
+4. **Learning:** AI continuously learns from conversations
+
+---
+
+## 🎉 You're Ready!
+
+1. **Change password** (see docs/SECURITY.md)
+2. **Train your AI** (paste your bio)
+3. **Chat with your twin**
+4. **Backup your data** (run backup-data.js)
+
+**Questions?** Check the docs/ folder!
+
+---
+
+**Built with ❤️ for lifetime use**

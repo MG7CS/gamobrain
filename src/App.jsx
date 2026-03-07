@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import AuthGate from './components/AuthGate'
 import NeuralBackground from './components/NeuralBackground'
 import FloatingMenu from './components/FloatingMenu'
 import ChatBar from './components/ChatBar'
@@ -37,7 +38,7 @@ export default function App() {
   }, [])
 
   return (
-    <>
+    <AuthGate>
       <NeuralBackground />
 
       <div style={{ position: 'relative', zIndex: 1, height: '100vh', overflow: 'hidden' }}>
@@ -69,6 +70,6 @@ export default function App() {
 
         <ChatBar onSend={handleChatBarSend} disabled={chatBarDisabled} />
       </div>
-    </>
+    </AuthGate>
   )
 }
