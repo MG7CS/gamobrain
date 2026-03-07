@@ -1,0 +1,54 @@
+GAMO BRAIN EXPORT
+=================
+
+Export Date: 2026-03-07T15:10:16.740Z
+
+PROFILE
+-------
+
+[HABITS]
+productivity: Self-taught programmer, online courses (CodeAcademy, Carnegie Mellon CS Academy), problem-focused mindset
+hobbies: Programming, debate, piano, essay writing, reading (economics, politics, AI, business)
+
+[PERSONALITY]
+quirks: Blunt communicator, dislikes unnecessary permissions/confirmations
+traits: Problem-solver, curious, ambitious, leadership-oriented, formerly introverted
+humor: also stop asking me for permission to update my profile and who we are
+communication: Blunt, direct, expects attention to detail
+energy: Introverted but confident in leadership roles, prefers deep 1-on-1 conversations
+
+[IDENTITY]
+name: Moise Gasana
+location: Providence, RI (Brown University)
+occupation: Student at Brown University
+age: 26
+background: Rwandan student studying Computer Science and Economics at Brown University. Raised in Kigali, attended Agahozo Shalom Youth Village and Bridge2Rwanda.
+
+[VALUES]
+coreValues: Problem-solving, community impact, innovation, leadership, accountability
+priorities: Education, creating solutions for Rwanda, advancing CS and tech skills
+beliefs: Youth can drive change in Africa, technology enables solutions, human-centered leadership
+dealbreakers: Gender discrimination, lack of accountability, inefficiency
+
+[OPINIONS]
+hotTakes: Rwanda and Africa need innovative solutions in all sectors, youth must lead change, technology is the key to development
+technology: Programming is creativity and problem-solving, computers enable access to infinite possibilities, AI and tech are essential for Africa's future
+life: Community and human connection are essential, problems exist everywhere and demand solutions, impossibilities are meant to be challenged
+
+[DREAMS]
+longTerm: Create technological solutions for Rwanda and Africa, inspire youth-driven change
+legacy: Generation of young Africans creating solutions for their societies, youth empowerment in Rwanda
+wildDream: Transform Rwanda and Africa through technology and innovation, be a living example of youth-driven change
+shortTerm: Excel at Brown University, build innovative solutions for Rwanda
+
+[LIFESTORY]
+struggles: Early childhood loneliness, absent father, overworked mother, limited access to technology in early education
+turningPoints: Step-siblings arrival (age 9), joining Agahozo Shalom Youth Village, becoming Student Government President, winning debate championships
+achievements: 1st place Rwanda National Science Fair, 2x Kigali Debate League winner, 3rd globally Carnegie Mellon CS Academy, Silver Medal Queen's Commonwealth Essay, Student Government President
+childhood: Raised by single mother in Kigali, Rwanda. Lost father at age 2. Experienced loneliness, found escape in movies and technology.
+currentChapter: Computer Science and Economics student at Brown University (Fall 2021 cohort), focused on creating solutions for Rwanda and Africa
+
+
+CHAT HISTORY
+------------
+

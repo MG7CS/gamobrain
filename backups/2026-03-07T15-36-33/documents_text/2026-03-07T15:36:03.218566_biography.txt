@@ -1,0 +1,4 @@
+Type: biography
+Timestamp: 2026-03-07T20:36:03.218Z
+
+I grew up in Kigali, Rwanda. My father passed away when I was 2 years old, and my mother worked multiple jobs to support us. I felt lonely as a child and found escape in movies and technology. Everything changed when my step-siblings arrived - Stacy, Carmel, and Armel. Taking care of them taught me about love and community. I attended Agahozo Shalom Youth Village where I became Student Government President and won debate championships. Now I study CS and Economics at Brown University, focused on creating technological solutions for Africa.

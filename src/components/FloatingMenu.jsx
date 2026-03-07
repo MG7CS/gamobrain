@@ -89,12 +89,15 @@ export default function FloatingMenu({ activeSection, onNavigate }) {
           top: 0,
           left: 0,
           right: 0,
-          zIndex: 1000,
+          zIndex: 10000,
           paddingTop: 'max(8px, env(safe-area-inset-top))',
           paddingLeft: 12,
           paddingRight: 12,
           paddingBottom: 8,
-          background: 'linear-gradient(to bottom, rgba(8,8,8,0.95) 0%, rgba(8,8,8,0.7) 70%, transparent 100%)',
+          background: 'rgba(8,8,8,0.98)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
         }}
       >
         <div className="glass-menu" style={{

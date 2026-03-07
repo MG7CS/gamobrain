@@ -1,0 +1,4 @@
+Type: bio
+Timestamp: 2026-03-07T20:35:19.094Z
+
+My name is Moise Gasana. I study Computer Science at Brown University. I am passionate about solving problems in Africa using technology.

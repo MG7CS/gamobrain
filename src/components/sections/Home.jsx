@@ -194,8 +194,8 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
           display: 'flex',
           flexDirection: 'column',
           gap: 10,
-          paddingTop: hasMessages ? 60 : 0,
-          paddingBottom: 100,
+          paddingTop: hasMessages ? 70 : 0,
+          paddingBottom: 80,
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(255,255,255,0.1) transparent',
           position: 'relative',
@@ -203,6 +203,7 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
           WebkitOverflowScrolling: 'touch',
           WebkitUserSelect: 'text',
           userSelect: 'text',
+          minHeight: 0,
         }}
       >
         <AnimatePresence initial={false}>

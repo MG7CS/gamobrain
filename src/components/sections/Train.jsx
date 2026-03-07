@@ -285,12 +285,13 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
           flexDirection: 'column',
           gap: 10,
           paddingTop: phase !== 'questions' ? 70 : 8,
-          paddingBottom: 100,
+          paddingBottom: 80,
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(255,255,255,0.1) transparent',
           WebkitOverflowScrolling: 'touch',
           WebkitUserSelect: 'text',
           userSelect: 'text',
+          minHeight: 0,
         }}
       >
         <AnimatePresence initial={false}>

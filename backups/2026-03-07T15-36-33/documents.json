@@ -1,0 +1,62 @@
+[
+  {
+    "content": "I love programming and building innovative solutions for Africa. I was born in Kigali, Rwanda.",
+    "metadata": {
+      "category": "test"
+    },
+    "documentId": "2026-03-07T15:32:22.579078_test",
+    "timestamp": "2026-03-07T15:32:22.579078",
+    "pk": "document",
+    "contentLength": 94,
+    "type": "test",
+    "sk": "2026-03-07T15:32:22.579078_test"
+  },
+  {
+    "content": "I love programming and building innovative solutions for Africa. I was born in Kigali, Rwanda in 2000. I attended Agahozo Shalom Youth Village.",
+    "metadata": {
+      "category": "test"
+    },
+    "documentId": "2026-03-07T15:32:50.569018_test",
+    "timestamp": "2026-03-07T15:32:50.569018",
+    "pk": "document",
+    "contentLength": 143,
+    "type": "test",
+    "sk": "2026-03-07T15:32:50.569018_test"
+  },
+  {
+    "content": "I am Moise Gasana, a student at Brown University studying Computer Science and Economics. I love programming, debate, and piano.",
+    "metadata": {
+      "category": "identity"
+    },
+    "documentId": "2026-03-07T15:33:37.068205_test",
+    "timestamp": "2026-03-07T15:33:37.068205",
+    "pk": "document",
+    "contentLength": 128,
+    "type": "test",
+    "sk": "2026-03-07T15:33:37.068205_test"
+  },
+  {
+    "content": "My name is Moise Gasana. I study Computer Science at Brown University. I am passionate about solving problems in Africa using technology.",
+    "metadata": {
+      "category": "identity"
+    },
+    "documentId": "2026-03-07T15:35:19.094580_bio",
+    "timestamp": "2026-03-07T15:35:19.094580",
+    "pk": "document",
+    "contentLength": 137,
+    "type": "bio",
+    "sk": "2026-03-07T15:35:19.094580_bio"
+  },
+  {
+    "content": "I grew up in Kigali, Rwanda. My father passed away when I was 2 years old, and my mother worked multiple jobs to support us. I felt lonely as a child and found escape in movies and technology. Everything changed when my step-siblings arrived - Stacy, Carmel, and Armel. Taking care of them taught me about love and community. I attended Agahozo Shalom Youth Village where I became Student Government President and won debate championships. Now I study CS and Economics at Brown University, focused on creating technological solutions for Africa.",
+    "metadata": {
+      "category": "life_story"
+    },
+    "documentId": "2026-03-07T15:36:03.218566_biography",
+    "timestamp": "2026-03-07T15:36:03.218566",
+    "pk": "document",
+    "contentLength": 545,
+    "type": "biography",
+    "sk": "2026-03-07T15:36:03.218566_biography"
+  }
+]

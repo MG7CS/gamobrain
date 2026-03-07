@@ -1,0 +1,51 @@
+GAMO BRAIN - Import Instructions
+==================================
+
+This export package contains your GAMO BRAIN data in multiple formats:
+
+FILES:
+------
+1. gamo_brain_export.json - Complete data in JSON format
+2. gamo_brain_export.md - Human-readable Markdown
+3. gamo_brain_export.txt - Plain text (most portable)
+4. profile.csv - Profile data for spreadsheets
+5. chat_history.csv - Chat messages for spreadsheets
+
+IMPORT TO DIFFERENT SERVICES:
+------------------------------
+
+→ Import to new GAMO BRAIN instance:
+  node restore-data.js [backup-name]
+
+→ Import to Pinecone (embeddings):
+  1. Generate embeddings from documents
+  2. Use Pinecone API to upsert vectors
+  3. See: https://docs.pinecone.io/docs/upsert-data
+
+→ Import to Weaviate:
+  1. Create schema matching profile structure
+  2. Use Weaviate client to import JSON
+  3. See: https://weaviate.io/developers/weaviate/manage-data/import
+
+→ Import to Qdrant:
+  1. Create collection
+  2. Upload points with payloads
+  3. See: https://qdrant.tech/documentation/concepts/points/
+
+→ Import to custom database:
+  Use gamo_brain_export.json and write custom import script
+
+MANUAL REVIEW:
+--------------
+Open gamo_brain_export.md in any text editor or Markdown viewer
+for a complete human-readable version of your data.
+
+SPREADSHEET ANALYSIS:
+---------------------
+Import profile.csv and chat_history.csv into Excel, Google Sheets,
+or any spreadsheet software for analysis and visualization.
+
+OFFLINE ARCHIVE:
+----------------
+Keep gamo_brain_export.txt as a permanent offline archive.
+It's plain text and will be readable on any system forever.
