@@ -120,14 +120,37 @@ textarea::placeholder {
   animation: none;
 }
 
+textarea {
+  caret-color: rgba(0, 255, 65, 0.8);
+}
+
+textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
 @media (max-width: 768px) {
   .glass-card {
     border-radius: 12px;
+  }
+
+  body {
+    font-size: 14px;
+    -webkit-text-size-adjust: 100%;
   }
 }
 
 @media (max-width: 480px) {
   body {
-    font-size: 14px;
+    font-size: 13px;
   }
 }

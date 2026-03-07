@@ -40,7 +40,7 @@ export default function App() {
     <>
       <NeuralBackground />
 
-      <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
+      <div style={{ position: 'relative', zIndex: 1, height: '100vh', overflow: 'hidden' }}>
         <FloatingMenu activeSection={section} onNavigate={setSection} />
 
         <AnimatePresence mode="wait">

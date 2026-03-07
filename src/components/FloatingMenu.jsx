@@ -81,29 +81,39 @@ export default function FloatingMenu({ activeSection, onNavigate }) {
   if (isMobile) {
     return (
       <motion.div
-        initial={{ y: 100, opacity: 0 }}
+        initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', damping: 20, stiffness: 300 }}
         style={{
           position: 'fixed',
-          bottom: 80,
-          left: '50%',
-          transform: 'translateX(-50%)',
+          top: 0,
+          left: 0,
+          right: 0,
           zIndex: 1000,
+          paddingTop: 'max(8px, env(safe-area-inset-top))',
+          paddingLeft: 12,
+          paddingRight: 12,
+          paddingBottom: 8,
+          background: 'linear-gradient(to bottom, rgba(8,8,8,0.95) 0%, rgba(8,8,8,0.7) 70%, transparent 100%)',
         }}
       >
-        <div className="glass-menu" style={{ display: 'flex', gap: 8, padding: '10px 16px', borderRadius: 20 }}>
+        <div className="glass-menu" style={{
+          display: 'flex',
+          gap: 6,
+          padding: '8px 12px',
+          borderRadius: 16,
+          justifyContent: 'center',
+        }}>
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className="nav-btn"
               style={{
                 background: activeSection === item.id ? 'rgba(0,255,65,0.15)' : 'transparent',
                 border: 'none',
-                color: activeSection === item.id ? 'rgba(0,255,65,0.9)' : 'rgba(255,255,255,0.6)',
-                padding: '10px 20px',
-                borderRadius: 12,
+                color: activeSection === item.id ? 'rgba(0,255,65,0.9)' : 'rgba(255,255,255,0.5)',
+                padding: '8px 18px',
+                borderRadius: 10,
                 fontSize: 12,
                 fontFamily: '"Courier New", monospace',
                 fontWeight: 700,

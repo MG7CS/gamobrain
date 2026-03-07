@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   getProfile, saveProfile, TRAINING_QUESTIONS, CATEGORY_LABELS,
 } from '../../utils/storage'
-import { sendMessage } from '../../utils/claudeAPI'
+import { sendMessage, extractProfileFromText } from '../../utils/claudeAPI'
 
 const ALL_QUESTIONS = Object.entries(TRAINING_QUESTIONS).flatMap(([category, questions]) =>
   questions.map(q => ({ ...q, category }))
@@ -11,8 +11,10 @@ const ALL_QUESTIONS = Object.entries(TRAINING_QUESTIONS).flatMap(([category, que
 
 export default function Train({ externalMessage, onExternalMessageHandled }) {
   const [messages, setMessages] = useState([])
+  const [phase, setPhase] = useState('dump') // 'dump' | 'questions' | 'done'
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [waitingForAnswer, setWaitingForAnswer] = useState(false)
+  const [dumpCount, setDumpCount] = useState(0)
   const scrollRef = useRef(null)
   const processedRef = useRef(null)
   const initializedRef = useRef(false)
@@ -26,33 +28,12 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
   useEffect(() => {
     if (!initializedRef.current) {
       initializedRef.current = true
-      const getInitialGreeting = async () => {
-        setWaitingForAnswer(true)
-        try {
-          const reply = await sendMessage([{ role: 'user', content: 'Greet me and explain that you need to learn about me through questions.' }], 'train')
-          const greeting = {
-            role: 'assistant',
-            content: reply,
-            timestamp: Date.now(),
-          }
-          setMessages([greeting])
-          setTimeout(() => {
-            askNextQuestion()
-          }, 1500)
-        } catch (err) {
-          const errorMsg = {
-            role: 'assistant',
-            content: err.message === 'API_KEY_MISSING'
-              ? 'I need a Claude API key to think. Check the .env file.'
-              : `Something went wrong: ${err.message}`,
-            timestamp: Date.now(),
-            isError: true,
-          }
-          setMessages([errorMsg])
-          setWaitingForAnswer(false)
-        }
-      }
-      getInitialGreeting()
+      setMessages([{
+        role: 'assistant',
+        content: 'Paste anything about yourself — bio, notes, journal entries, LinkedIn, documents, whatever you have. I\'ll extract what matters.\n\nYou can paste multiple things one after another. When you\'re done, type "done" to start questions.',
+        timestamp: Date.now(),
+      }])
+      setWaitingForAnswer(true)
     }
   }, [])
 
@@ -64,150 +45,201 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
     }
   }, [externalMessage, onExternalMessageHandled])
 
-  const askNextQuestion = async () => {
-    if (currentQuestionIndex >= ALL_QUESTIONS.length) {
-      try {
-        const reply = await sendMessage([{ role: 'user', content: 'Thank me for completing the training and tell me I can now talk to you in "Meet GAMO".' }], 'train')
-        const completion = {
+  const startQuestions = async () => {
+    setPhase('questions')
+    setCurrentQuestionIndex(0)
+    await askNextQuestion(0)
+  }
+
+  const handleDump = async (text) => {
+    const lower = text.trim().toLowerCase()
+
+    if (lower === 'done' || lower === 'skip') {
+      const userMsg = { role: 'user', content: text, timestamp: Date.now() }
+      setMessages(prev => [...prev, userMsg])
+      setWaitingForAnswer(false)
+
+      if (dumpCount === 0) {
+        setMessages(prev => [...prev, {
           role: 'assistant',
-          content: reply,
+          content: 'No problem. Let\'s go straight to questions.',
           timestamp: Date.now(),
-        }
-        setMessages(prev => [...prev, completion])
-      } catch (err) {
-        const errorMsg = {
+        }])
+      } else {
+        setMessages(prev => [...prev, {
           role: 'assistant',
-          content: 'Training complete! Go to "Meet GAMO" to talk to me.',
+          content: `Got it — absorbed ${dumpCount} ${dumpCount === 1 ? 'entry' : 'entries'}. Now let me fill in the gaps.`,
           timestamp: Date.now(),
-        }
-        setMessages(prev => [...prev, errorMsg])
+        }])
       }
+      setTimeout(() => startQuestions(), 600)
+      return
+    }
+
+    const userMsg = { role: 'user', content: text, timestamp: Date.now() }
+    setMessages(prev => [...prev, userMsg])
+    setWaitingForAnswer(false)
+
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: 'Processing...',
+      timestamp: Date.now(),
+      isThinking: true,
+    }])
+
+    const profile = await getProfile()
+    try {
+      const enriched = await extractProfileFromText(text, profile)
+      await saveProfile(enriched)
+
+      const newFields = []
+      for (const [cat, fields] of Object.entries(enriched)) {
+        for (const [key, val] of Object.entries(fields || {})) {
+          if (val && (!profile[cat]?.[key] || profile[cat][key] !== val)) {
+            newFields.push(key)
+          }
+        }
+      }
+
+      setMessages(prev => prev.filter(m => !m.isThinking))
+      const summary = newFields.length > 0
+        ? `Absorbed. Learned: ${newFields.slice(0, 6).join(', ')}${newFields.length > 6 ? ` (+${newFields.length - 6} more)` : ''}.\n\nPaste more, or type "done" to start questions.`
+        : 'Got it. Paste more, or type "done" to start questions.'
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: summary,
+        timestamp: Date.now(),
+      }])
+    } catch (err) {
+      console.error('Profile extraction error:', err)
+      setMessages(prev => prev.filter(m => !m.isThinking))
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Saved. Paste more, or type "done" to start questions.',
+        timestamp: Date.now(),
+      }])
+    }
+
+    setDumpCount(prev => prev + 1)
+    setWaitingForAnswer(true)
+  }
+
+  const askNextQuestion = async (indexOverride) => {
+    const index = indexOverride !== undefined ? indexOverride : currentQuestionIndex
+
+    if (index >= ALL_QUESTIONS.length) {
+      setPhase('done')
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Training complete. Go to "Meet GAMO" to talk.',
+        timestamp: Date.now(),
+      }])
       setWaitingForAnswer(false)
       return
     }
 
-    const q = ALL_QUESTIONS[currentQuestionIndex]
+    const q = ALL_QUESTIONS[index]
     const profile = await getProfile()
     const existingAnswer = profile[q.category]?.[q.key]
+    const catLabel = CATEGORY_LABELS[q.category] || q.category
 
-    let questionPrompt = `Ask this question naturally: "${q.question}"`
+    let questionText = q.question
     if (existingAnswer) {
-      questionPrompt += ` The user previously answered: "${existingAnswer}". Mention this and ask if they want to update it.`
+      questionText = `[${catLabel}] ${q.question}\n(Current: "${existingAnswer}" — press enter to keep, or type new answer)`
+    } else {
+      questionText = `[${catLabel}] ${q.question}`
     }
 
-    try {
-      const reply = await sendMessage([{ role: 'user', content: questionPrompt }], 'train')
-      const questionMsg = {
-        role: 'assistant',
-        content: reply,
-        timestamp: Date.now(),
-      }
-      setMessages(prev => [...prev, questionMsg])
-    } catch (err) {
-      const questionMsg = {
-        role: 'assistant',
-        content: q.question,
-        timestamp: Date.now(),
-      }
-      setMessages(prev => [...prev, questionMsg])
-    }
-    
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: questionText,
+      timestamp: Date.now(),
+    }])
     setWaitingForAnswer(true)
   }
 
   const handleAnswer = async (text) => {
     if (!waitingForAnswer) return
 
+    if (phase === 'dump') {
+      handleDump(text)
+      return
+    }
+
     const userMsg = { role: 'user', content: text, timestamp: Date.now() }
     setMessages(prev => [...prev, userMsg])
 
     const q = ALL_QUESTIONS[currentQuestionIndex]
     const profile = await getProfile()
-    if (!profile[q.category]) profile[q.category] = {}
-    profile[q.category][q.key] = text
-    await saveProfile(profile)
 
-    setWaitingForAnswer(false)
-    setCurrentQuestionIndex(prev => prev + 1)
-
-    try {
-      const reply = await sendMessage([
-        { role: 'user', content: `I just told you: "${text}". Acknowledge this briefly and naturally.` }
-      ], 'train')
-      const ack = {
-        role: 'assistant',
-        content: reply,
-        timestamp: Date.now(),
-      }
-      setMessages(prev => [...prev, ack])
-    } catch (err) {
-      const ack = {
-        role: 'assistant',
-        content: 'Got it.',
-        timestamp: Date.now(),
-      }
-      setMessages(prev => [...prev, ack])
+    const trimmed = text.trim()
+    if (trimmed) {
+      if (!profile[q.category]) profile[q.category] = {}
+      profile[q.category][q.key] = trimmed
+      await saveProfile(profile)
     }
 
+    setWaitingForAnswer(false)
+    const nextIndex = currentQuestionIndex + 1
+    setCurrentQuestionIndex(nextIndex)
+
     setTimeout(() => {
-      askNextQuestion()
-    }, 800)
+      askNextQuestion(nextIndex)
+    }, 300)
   }
 
-  const hasMessages = messages.length > 0
+  const progress = phase === 'questions'
+    ? Math.round((currentQuestionIndex / ALL_QUESTIONS.length) * 100)
+    : phase === 'done' ? 100 : 0
 
   return (
     <div style={{
-      minHeight: '100vh',
-      padding: '60px 16px 140px',
-      maxWidth: 760,
-      margin: '0 auto',
+      height: '100vh',
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
+      maxWidth: 760,
+      margin: '0 auto',
+      padding: '0 12px',
     }}>
-      <motion.div
-        initial={{ opacity: 1 }}
-        animate={{ opacity: hasMessages ? 0.08 : 1 }}
-        transition={{ duration: 0.8 }}
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          textAlign: 'center',
-          pointerEvents: 'none',
-          zIndex: 0,
-          width: '90%',
-          maxWidth: '600px',
-        }}
-      >
-        <h1 style={{
-          fontFamily: '"Courier New", Courier, monospace',
-          fontSize: 'clamp(24px, 6vw, 48px)',
-          fontWeight: 700,
-          color: 'rgba(0,255,65,0.5)',
-          letterSpacing: '0.15em',
-          lineHeight: 1.2,
-          margin: 0,
-          textShadow: '0 0 10px rgba(0,255,65,0.3), 0 0 20px rgba(0,255,65,0.1)',
-          textTransform: 'uppercase',
-          wordBreak: 'break-all',
+      {phase === 'questions' && (
+        <div style={{
+          paddingTop: 'max(16px, env(safe-area-inset-top))',
+          paddingBottom: 8,
+          flexShrink: 0,
         }}>
-          {'<GAMO_BRAIN/>'}
-        </h1>
-        <p style={{
-          fontFamily: '"Courier New", Courier, monospace',
-          fontSize: 'clamp(10px, 2vw, 13px)',
-          color: 'rgba(255,255,255,0.25)',
-          fontWeight: 400,
-          marginTop: 16,
-          letterSpacing: '0.03em',
-          lineHeight: 1.4,
-        }}>
-          I am Moise Gasana's virtual Brain. Created 3/6/2026 at 7:33pm
-        </p>
-      </motion.div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '0 4px',
+          }}>
+            <div style={{
+              flex: 1,
+              height: 3,
+              borderRadius: 2,
+              background: 'rgba(255,255,255,0.06)',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                width: `${progress}%`,
+                height: '100%',
+                background: 'rgba(0,255,65,0.5)',
+                borderRadius: 2,
+                transition: 'width 0.4s ease',
+              }} />
+            </div>
+            <span style={{
+              fontSize: 11,
+              fontFamily: '"Courier New", monospace',
+              color: 'rgba(0,255,65,0.5)',
+              flexShrink: 0,
+            }}>
+              {currentQuestionIndex}/{ALL_QUESTIONS.length}
+            </span>
+          </div>
+        </div>
+      )}
 
       <div
         ref={scrollRef}
@@ -216,77 +248,78 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: 12,
-          paddingBottom: 20,
-          paddingTop: hasMessages ? 60 : 0,
+          gap: 10,
+          paddingTop: phase !== 'questions' ? 70 : 8,
+          paddingBottom: 90,
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(255,255,255,0.1) transparent',
-          position: 'relative',
-          zIndex: 1,
         }}
       >
         <AnimatePresence initial={false}>
           {messages.map((msg, i) => (
             <motion.div
               key={msg.timestamp + '-' + i}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
               style={{
                 display: 'flex',
                 justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
               }}
             >
               <div style={{
-                maxWidth: '80%',
+                maxWidth: msg.role === 'user' ? '85%' : '90%',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 4,
+                gap: 3,
               }}>
                 <div style={{
-                  padding: '12px 16px',
-                  borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                  padding: '10px 14px',
+                  borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
                   background: msg.role === 'user'
                     ? 'rgba(0,212,255,0.1)'
-                    : 'rgba(255,255,255,0.04)',
+                    : msg.isThinking
+                      ? 'rgba(0,255,65,0.04)'
+                      : 'rgba(255,255,255,0.04)',
                   border: `1px solid ${
                     msg.role === 'user'
                       ? 'rgba(0,212,255,0.2)'
-                      : 'rgba(255,255,255,0.06)'
+                      : msg.isThinking
+                        ? 'rgba(0,255,65,0.15)'
+                        : 'rgba(255,255,255,0.06)'
                   }`,
-                  color: 'rgba(255,255,255,0.85)',
-                  fontFamily: 'Inter, sans-serif',
-                  fontSize: 14,
+                  color: msg.isThinking ? 'rgba(0,255,65,0.6)' : 'rgba(255,255,255,0.85)',
+                  fontFamily: msg.isThinking ? '"Courier New", monospace' : 'Inter, sans-serif',
+                  fontSize: msg.isThinking ? 12 : 14,
                   lineHeight: 1.6,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                 }}>
-                  {msg.role === 'assistant' && (
+                  {msg.role === 'assistant' && !msg.isThinking && (
                     <span style={{
-                      fontSize: 11,
+                      fontSize: 10,
                       color: '#00D4FF',
-                      fontFamily: 'Space Mono',
+                      fontFamily: '"Courier New", monospace',
                       fontWeight: 700,
                       display: 'block',
-                      marginBottom: 4,
-                      opacity: 0.7,
-                    }}>GAMO BRAIN</span>
+                      marginBottom: 3,
+                      opacity: 0.6,
+                    }}>GAMO</span>
                   )}
                   {msg.content}
                 </div>
                 <span style={{
-                  fontSize: 10,
-                  color: 'rgba(255,255,255,0.2)',
-                  fontFamily: 'Courier New, monospace',
+                  fontSize: 9,
+                  color: 'rgba(255,255,255,0.15)',
+                  fontFamily: '"Courier New", monospace',
                   alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
                   paddingLeft: msg.role === 'user' ? 0 : 4,
                   paddingRight: msg.role === 'user' ? 4 : 0,
                 }}>
-                  {new Date(msg.timestamp).toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
+                  {new Date(msg.timestamp).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
                     minute: '2-digit',
-                    second: '2-digit',
-                    hour12: true 
+                    hour12: true
                   })}
                 </span>
               </div>

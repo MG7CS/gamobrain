@@ -1,22 +1,49 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { getProfile } from '../../utils/storage'
-import { sendMessage } from '../../utils/claudeAPI'
+import { getProfile, updateProfileField } from '../../utils/storage'
+import { sendMessage, extractNewProfileFacts } from '../../utils/claudeAPI'
+
+const CHAT_STORAGE_KEY = 'gamo_chat_history'
+const MAX_HISTORY = 50
+
+function loadStoredHistory() {
+  try {
+    const data = localStorage.getItem(CHAT_STORAGE_KEY)
+    if (!data) return []
+    const history = JSON.parse(data)
+    return Array.isArray(history) ? history.slice(-MAX_HISTORY) : []
+  } catch {
+    return []
+  }
+}
+
+function saveHistory(messages) {
+  try {
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages))
+  } catch {
+    // localStorage full or unavailable
+  }
+}
 
 export default function Home({ externalMessage, onExternalMessageHandled }) {
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState(() => loadStoredHistory())
   const [loading, setLoading] = useState(false)
+  const [learnedFact, setLearnedFact] = useState(null)
   const scrollRef = useRef(null)
   const processedRef = useRef(null)
-  const initializedRef = useRef(false)
+  const learnedFactTimer = useRef(null)
+
+  const scrollToBottom = () => {
+    requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      }
+    })
+  }
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+    scrollToBottom()
   }, [messages, loading])
-
-  // No initial greeting - user sends first message
 
   useEffect(() => {
     if (externalMessage && externalMessage !== processedRef.current) {
@@ -26,17 +53,43 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
     }
   }, [externalMessage, onExternalMessageHandled])
 
+  const showLearnedToast = (label) => {
+    if (learnedFactTimer.current) clearTimeout(learnedFactTimer.current)
+    setLearnedFact(label)
+    learnedFactTimer.current = setTimeout(() => setLearnedFact(null), 4000)
+  }
+
+  const extractAndLearn = async (userText) => {
+    try {
+      const profile = await getProfile()
+      const newFacts = await extractNewProfileFacts(userText, profile)
+      if (!newFacts) return
+      for (const { category, key, value } of newFacts) {
+        await updateProfileField(category, key, value)
+      }
+      const label = newFacts.length === 1
+        ? `${newFacts[0].key}: ${newFacts[0].value}`
+        : `${newFacts.length} new things`
+      showLearnedToast(label)
+    } catch {
+      // Silent fail
+    }
+  }
+
   const handleSend = async (text) => {
     const userMsg = { role: 'user', content: text, timestamp: Date.now() }
     const updated = [...messages, userMsg]
     setMessages(updated)
     setLoading(true)
 
+    extractAndLearn(text)
+
     try {
       const reply = await sendMessage(updated, 'chat')
       const assistantMsg = { role: 'assistant', content: reply, timestamp: Date.now() }
       const final = [...updated, assistantMsg]
       setMessages(final)
+      saveHistory(final)
     } catch (err) {
       const errorMsg = {
         role: 'assistant',
@@ -48,6 +101,7 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
       }
       const final = [...updated, errorMsg]
       setMessages(final)
+      saveHistory(final)
     } finally {
       setLoading(false)
     }
@@ -57,57 +111,59 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
 
   return (
     <div style={{
-      minHeight: '100vh',
-      padding: '60px 16px 140px',
-      maxWidth: 760,
-      margin: '0 auto',
+      height: '100vh',
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
+      maxWidth: 760,
+      margin: '0 auto',
+      padding: '0 12px',
     }}>
-      <motion.div
-        initial={{ opacity: 1 }}
-        animate={{ opacity: hasMessages ? 0.08 : 1 }}
-        transition={{ duration: 0.8 }}
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          textAlign: 'center',
-          pointerEvents: 'none',
-          zIndex: 0,
-          width: '90%',
-          maxWidth: '600px',
-        }}
-      >
-        <h1 style={{
-          fontFamily: '"Courier New", Courier, monospace',
-          fontSize: 'clamp(24px, 6vw, 48px)',
-          fontWeight: 700,
-          color: 'rgba(0,255,65,0.5)',
-          letterSpacing: '0.15em',
-          lineHeight: 1.2,
-          margin: 0,
-          textShadow: '0 0 10px rgba(0,255,65,0.3), 0 0 20px rgba(0,255,65,0.1)',
-          textTransform: 'uppercase',
-          wordBreak: 'break-all',
-        }}>
-          {'<GAMO_BRAIN/>'}
-        </h1>
-        <p style={{
-          fontFamily: '"Courier New", Courier, monospace',
-          fontSize: 'clamp(10px, 2vw, 13px)',
-          color: 'rgba(255,255,255,0.25)',
-          fontWeight: 400,
-          marginTop: 16,
-          letterSpacing: '0.03em',
-          lineHeight: 1.4,
-          padding: '0 8px',
-        }}>
-          I am Moise Gasana's virtual Brain. Created 3/6/2026 at 7:33pm
-        </p>
-      </motion.div>
+      <AnimatePresence>
+        {!hasMessages && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            style={{
+              position: 'absolute',
+              top: '30%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              pointerEvents: 'none',
+              zIndex: 0,
+              width: '90%',
+              maxWidth: '500px',
+            }}
+          >
+            <h1 style={{
+              fontFamily: '"Courier New", Courier, monospace',
+              fontSize: 'clamp(22px, 5vw, 42px)',
+              fontWeight: 700,
+              color: 'rgba(0,255,65,0.5)',
+              letterSpacing: '0.12em',
+              lineHeight: 1.2,
+              margin: 0,
+              textShadow: '0 0 10px rgba(0,255,65,0.3), 0 0 20px rgba(0,255,65,0.1)',
+              textTransform: 'uppercase',
+            }}>
+              {'<GAMO_BRAIN/>'}
+            </h1>
+            <p style={{
+              fontFamily: '"Courier New", Courier, monospace',
+              fontSize: 'clamp(10px, 2vw, 12px)',
+              color: 'rgba(255,255,255,0.2)',
+              fontWeight: 400,
+              marginTop: 12,
+              letterSpacing: '0.03em',
+              lineHeight: 1.4,
+            }}>
+              I am Moise Gasana's virtual Brain. Created 3/6/2026 at 7:33pm
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div
         ref={scrollRef}
@@ -116,9 +172,9 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: 12,
-          paddingBottom: 20,
+          gap: 10,
           paddingTop: hasMessages ? 60 : 0,
+          paddingBottom: 90,
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(255,255,255,0.1) transparent',
           position: 'relative',
@@ -129,23 +185,23 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
           {messages.map((msg, i) => (
             <motion.div
               key={msg.timestamp + '-' + i}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
               style={{
                 display: 'flex',
                 justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
               }}
             >
               <div style={{
-                maxWidth: '80%',
+                maxWidth: '85%',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 4,
+                gap: 3,
               }}>
                 <div style={{
-                  padding: '12px 16px',
-                  borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                  padding: '10px 14px',
+                  borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
                   background: msg.role === 'user'
                     ? 'rgba(0,212,255,0.1)'
                     : msg.isError
@@ -167,30 +223,29 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
                 }}>
                   {msg.role === 'assistant' && (
                     <span style={{
-                      fontSize: 11,
+                      fontSize: 10,
                       color: msg.isError ? 'rgba(255,150,150,0.7)' : '#00D4FF',
-                      fontFamily: 'Space Mono',
+                      fontFamily: '"Courier New", monospace',
                       fontWeight: 700,
                       display: 'block',
-                      marginBottom: 4,
-                      opacity: 0.7,
+                      marginBottom: 3,
+                      opacity: 0.6,
                     }}>GAMO BRAIN</span>
                   )}
                   {msg.content}
                 </div>
                 <span style={{
-                  fontSize: 10,
-                  color: 'rgba(255,255,255,0.2)',
-                  fontFamily: 'Courier New, monospace',
+                  fontSize: 9,
+                  color: 'rgba(255,255,255,0.15)',
+                  fontFamily: '"Courier New", monospace',
                   alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
                   paddingLeft: msg.role === 'user' ? 0 : 4,
                   paddingRight: msg.role === 'user' ? 4 : 0,
                 }}>
-                  {new Date(msg.timestamp).toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
+                  {new Date(msg.timestamp).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
                     minute: '2-digit',
-                    second: '2-digit',
-                    hour12: true 
+                    hour12: true
                   })}
                 </span>
               </div>
@@ -200,35 +255,35 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
 
         {loading && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             style={{ display: 'flex', justifyContent: 'flex-start' }}
           >
             <div style={{
-              padding: '12px 20px',
-              borderRadius: '14px 14px 14px 4px',
+              padding: '10px 16px',
+              borderRadius: '12px 12px 12px 4px',
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.06)',
               display: 'flex',
-              gap: 6,
+              gap: 5,
               alignItems: 'center',
             }}>
               <span style={{
-                fontSize: 11,
+                fontSize: 10,
                 color: '#00D4FF',
-                fontFamily: 'Space Mono',
+                fontFamily: '"Courier New", monospace',
                 fontWeight: 700,
                 marginRight: 4,
-                opacity: 0.7,
-              }}>GAMO BRAIN</span>
+                opacity: 0.6,
+              }}>GAMO</span>
               {[0, 1, 2].map(i => (
                 <motion.div
                   key={i}
                   animate={{ opacity: [0.2, 1, 0.2] }}
                   transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
                   style={{
-                    width: 6,
-                    height: 6,
+                    width: 5,
+                    height: 5,
                     borderRadius: '50%',
                     background: '#00D4FF',
                   }}
@@ -238,6 +293,35 @@ export default function Home({ externalMessage, onExternalMessageHandled }) {
           </motion.div>
         )}
       </div>
+
+      <AnimatePresence>
+        {learnedFact && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              position: 'fixed',
+              bottom: 80,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0,255,65,0.08)',
+              border: '1px solid rgba(0,255,65,0.2)',
+              borderRadius: 8,
+              padding: '5px 12px',
+              fontFamily: '"Courier New", monospace',
+              fontSize: 10,
+              color: 'rgba(0,255,65,0.6)',
+              whiteSpace: 'nowrap',
+              zIndex: 100,
+              pointerEvents: 'none',
+            }}
+          >
+            GAMO learned: {learnedFact}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

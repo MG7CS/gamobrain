@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 
 const PLACEHOLDERS = [
@@ -6,15 +6,17 @@ const PLACEHOLDERS = [
   'Who are you?',
   'What would I do if...',
   'Train me...',
-  'Predict my next move...',
+  'Paste a bio, notes, anything...',
 ]
+
+const MAX_TEXTAREA_HEIGHT = 160
 
 export default function ChatBar({ onSend, disabled }) {
   const [value, setValue] = useState('')
   const [focused, setFocused] = useState(false)
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
   const [placeholderVisible, setPlaceholderVisible] = useState(true)
-  const inputRef = useRef(null)
+  const textareaRef = useRef(null)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -27,11 +29,25 @@ export default function ChatBar({ onSend, disabled }) {
     return () => clearInterval(interval)
   }, [])
 
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT) + 'px'
+  }, [])
+
+  useEffect(() => {
+    autoResize()
+  }, [value, autoResize])
+
   const handleSubmit = () => {
     const text = value.trim()
     if (!text || disabled) return
     onSend(text)
     setValue('')
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
   }
 
   const handleKeyDown = (e) => {
@@ -52,8 +68,8 @@ export default function ChatBar({ onSend, disabled }) {
         left: 0,
         right: 0,
         zIndex: 900,
-        padding: '12px 12px',
-        paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+        padding: '10px 10px',
+        paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
       }}
     >
       <div
@@ -68,7 +84,7 @@ export default function ChatBar({ onSend, disabled }) {
           className={`glass-chat-bar ${focused ? 'focused' : ''}`}
           style={{
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-end',
             gap: 10,
             padding: '10px 14px',
             borderRadius: 14,
@@ -89,19 +105,20 @@ export default function ChatBar({ onSend, disabled }) {
             background: 'rgba(0,255,65,0.8)',
             boxShadow: '0 0 8px rgba(0,255,65,0.6)',
             flexShrink: 0,
+            marginBottom: 8,
             animation: 'pulse-dot 2s ease-in-out infinite',
           }} />
 
-          <div style={{ flex: 1, position: 'relative' }}>
-            <input
-              ref={inputRef}
-              type="text"
+          <div style={{ flex: 1, position: 'relative', minHeight: 22 }}>
+            <textarea
+              ref={textareaRef}
               value={value}
               onChange={e => setValue(e.target.value)}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
               onKeyDown={handleKeyDown}
               disabled={disabled}
+              rows={1}
               style={{
                 width: '100%',
                 background: 'transparent',
@@ -112,6 +129,10 @@ export default function ChatBar({ onSend, disabled }) {
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 400,
                 caretColor: 'rgba(0,255,65,0.8)',
+                resize: 'none',
+                overflow: 'auto',
+                lineHeight: 1.5,
+                maxHeight: MAX_TEXTAREA_HEIGHT,
               }}
               placeholder=""
             />
@@ -120,8 +141,7 @@ export default function ChatBar({ onSend, disabled }) {
                 style={{
                   position: 'absolute',
                   left: 0,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
+                  top: 2,
                   color: 'rgba(255,255,255,0.3)',
                   fontSize: 14,
                   fontFamily: 'Inter, sans-serif',
