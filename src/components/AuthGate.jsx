@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 const AUTH_KEY = 'gamo_brain_auth'
-const PASSWORD_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918' // SHA-256 of "admin"
+const PASSWORD_HASH = 'a142a4d70342652ed9c215ff2fbbcec846d7b924af18eaf1ec4078c394f42d2c' // SHA-256 of "admin"
 
 // Simple SHA-256 hash function
 async function hashPassword(password) {
