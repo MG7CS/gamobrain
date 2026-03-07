@@ -104,6 +104,58 @@ export async function clearChatHistory() {
   }
 }
 
+// Document operations
+export async function saveDocument(content, type, metadata = {}) {
+  try {
+    const result = await apiCall('save_document', { content, type, metadata })
+    return result
+  } catch (error) {
+    console.error('Failed to save document to API:', error)
+    throw error
+  }
+}
+
+export async function getDocument(documentId) {
+  try {
+    const result = await apiCall('get_document', { documentId })
+    return result.document
+  } catch (error) {
+    console.error('Failed to get document from API:', error)
+    throw error
+  }
+}
+
+export async function listDocuments() {
+  try {
+    const result = await apiCall('list_documents')
+    return result.documents || []
+  } catch (error) {
+    console.error('Failed to list documents from API:', error)
+    return []
+  }
+}
+
+export async function getDocuments() {
+  try {
+    const result = await apiCall('get_documents')
+    return result.documents || []
+  } catch (error) {
+    console.error('Failed to get documents from API:', error)
+    return []
+  }
+}
+
+// Semantic search
+export async function searchMemories(query, topK = 5) {
+  try {
+    const result = await apiCall('search_memories', { query, topK })
+    return result.results || []
+  } catch (error) {
+    console.error('Failed to search memories:', error)
+    return []
+  }
+}
+
 function getDefaultProfile() {
   return {
     identity: {},

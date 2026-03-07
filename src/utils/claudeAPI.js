@@ -1,4 +1,5 @@
 import { getProfile, getApiKey, CATEGORY_LABELS } from './storage'
+import { searchMemories } from './api'
 
 const MODEL = 'claude-sonnet-4-20250514'
 
@@ -84,7 +85,27 @@ export async function sendMessage(messages, section = 'chat') {
   }
 
   const profile = await getProfile()
-  const systemPrompt = buildSystemPrompt(profile, section)
+  let systemPrompt = buildSystemPrompt(profile, section)
+
+  // Add semantic search context for chat
+  if (section === 'chat' && messages.length > 0) {
+    const lastUserMessage = messages[messages.length - 1]
+    if (lastUserMessage?.role === 'user' && lastUserMessage?.content) {
+      try {
+        const searchResults = await searchMemories(lastUserMessage.content, 5)
+        
+        if (searchResults && searchResults.length > 0) {
+          const context = searchResults
+            .map((r, i) => `[Memory ${i + 1}] ${r.text}`)
+            .join('\n\n')
+          
+          systemPrompt += `\n\nRelevant memories from your documents:\n${context}\n\nUse these memories to provide specific, detailed responses.`
+        }
+      } catch (err) {
+        console.log('Semantic search unavailable, continuing without:', err)
+      }
+    }
+  }
 
   const formattedMessages = messages.map(m => ({
     role: m.role === 'user' ? 'user' : 'assistant',

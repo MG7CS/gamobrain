@@ -4,6 +4,7 @@ import {
   getProfile, saveProfile, TRAINING_QUESTIONS, CATEGORY_LABELS,
 } from '../../utils/storage'
 import { sendMessage, extractProfileFromText } from '../../utils/claudeAPI'
+import { saveDocument } from '../../utils/api'
 
 const ALL_QUESTIONS = Object.entries(TRAINING_QUESTIONS).flatMap(([category, questions]) =>
   questions.map(q => ({ ...q, category }))
@@ -82,13 +83,27 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
 
     setMessages(prev => [...prev, {
       role: 'assistant',
-      content: 'Processing...',
+      content: 'Processing document and generating embeddings...',
       timestamp: Date.now(),
       isThinking: true,
     }])
 
     const profile = await getProfile()
+    let documentSaved = false
+    let chunks = 0
+    
     try {
+      // 1. Save as full document (with embeddings)
+      const docResult = await saveDocument(text, 'training_dump', {
+        source: 'manual_paste',
+        category: 'training',
+        timestamp: Date.now()
+      })
+      documentSaved = true
+      chunks = docResult.chunks || 0
+      console.log('Document saved:', docResult)
+
+      // 2. Extract to profile for quick facts
       const enriched = await extractProfileFromText(text, profile)
       await saveProfile(enriched)
 
@@ -102,8 +117,8 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
       }
 
       setMessages(prev => prev.filter(m => !m.isThinking))
-      const summary = newFields.length > 0
-        ? `Absorbed. Learned: ${newFields.slice(0, 6).join(', ')}${newFields.length > 6 ? ` (+${newFields.length - 6} more)` : ''}.\n\nPaste more, or type "done" to start questions.`
+      const summary = documentSaved
+        ? `Document saved (${chunks} chunks, embeddings generated).\nLearned: ${newFields.length > 0 ? newFields.slice(0, 6).join(', ') + (newFields.length > 6 ? ` (+${newFields.length - 6} more)` : '') : 'processing'}.\n\nPaste more, or type "done" to start questions.`
         : 'Got it. Paste more, or type "done" to start questions.'
       setMessages(prev => [...prev, {
         role: 'assistant',
@@ -111,11 +126,11 @@ export default function Train({ externalMessage, onExternalMessageHandled }) {
         timestamp: Date.now(),
       }])
     } catch (err) {
-      console.error('Profile extraction error:', err)
+      console.error('Document processing error:', err)
       setMessages(prev => prev.filter(m => !m.isThinking))
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Saved. Paste more, or type "done" to start questions.',
+        content: 'Saved locally. Paste more, or type "done" to start questions.',
         timestamp: Date.now(),
       }])
     }
