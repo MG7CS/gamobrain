@@ -6,13 +6,11 @@ Your personal AI twin - trained on your life, thoughts, and experiences.
 
 ## 🚀 Quick Start
 
-**Live Site:** [Your deployed URL]
-
-**Default Password:** `admin` (⚠️ Change this immediately!)
+**Live Site:** gamobrain.com
 
 ### **First Time Setup:**
 1. Visit your site
-2. Enter password: `admin`
+2. Enter password: `admin` (default)
 3. Go to "Teach Me" and paste your bio/documents
 4. Chat with your twin in "Meet GAMO"
 
