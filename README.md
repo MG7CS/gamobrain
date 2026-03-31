@@ -135,5 +135,3 @@ git push
 **Questions?** Check the docs/ folder!
 
 ---
-
-**Built with ❤️ for lifetime use**
